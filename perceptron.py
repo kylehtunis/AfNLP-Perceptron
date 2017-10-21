@@ -36,7 +36,10 @@ def load_docs(direc, lemmatize, labelMapFile='labels.csv'):
         # open the file at file_path, construct a list of its word tokens,
         # and append that list to 'docs'.
         # look up the document's label and append it to 'labels'.
-        ...
+        file=open(file_path)
+        docs.append(file.read())
+        file.close()
+        labels.append(labelMap[filename])
 
     return docs, labels
 
