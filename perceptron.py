@@ -59,19 +59,19 @@ def extract_feats(doc):
     prev2=doc[1]
     #bias feature
     ff['bias']=1
-    for word in doc[1:]:
-        #filter punctuation for unigrams
-        if word not in ['.',',','?','!','\'','"']:
-            #binary unigram
-            if ff[word]==0:
-                ff[word]=1
+    for word in doc[2:]:
         
         #case normalization
         word=word.lower()
         
-
+        #lemmatization
+        word=WordNetLemmatizer().lemmatize(word)
         
-        #trigram counts
+        #binary unigram
+        if ff[word]==0:
+            ff[word]=1
+        
+        #word trigram counts
         ff[prev2+' '+prev+' '+word]+=1
         prev2=prev
         prev=word
@@ -129,9 +129,9 @@ class Perceptron:
                     correct-=1
                 correct+=1
                 total+=1
-            print('Iteration '+str(iteration)+': updates='+str(updates)+', train accuracy='+str(correct/total)+', dev accuracy='+str(self.test_eval(self.dev_docs, self.dev_labels)))
+            print('Iteration '+str(iteration+1)+': updates='+str(updates)+', train accuracy='+str(correct/total)+', dev accuracy='+str(self.test_eval(self.dev_docs, self.dev_labels)))
             if total==correct:
-                print('Converged after '+str(i+1)+' iterations')
+                print('Converged after '+str(iteration+1)+' iterations')
                 break
             
                     
@@ -182,4 +182,6 @@ if __name__ == "__main__":
     ptron = Perceptron(train_docs, train_labels, MAX_ITERATIONS=niters, dev_docs=dev_docs, dev_labels=dev_labels)
     acc = ptron.test_eval(test_docs, test_labels)
     print(acc, file=sys.stderr)
+    
+    #for testing
     winsound.Beep(440, 500)
