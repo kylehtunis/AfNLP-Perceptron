@@ -17,6 +17,9 @@ from nltk.stem.wordnet import WordNetLemmatizer
 
 from evaluation import Eval
 
+#only for testing
+import winsound
+
 def load_docs(direc, lemmatize, labelMapFile='labels.csv'):
     """Return a list of word-token-lists, one per document.
     Words are optionally lemmatized with WordNet."""
@@ -37,10 +40,9 @@ def load_docs(direc, lemmatize, labelMapFile='labels.csv'):
         # and append that list to 'docs'.
         # look up the document's label and append it to 'labels'.
         file=open(file_path)
-        docs.append(file.read())
+        docs.append(file.read().split())
         file.close()
         labels.append(labelMap[filename])
-
     return docs, labels
 
 def extract_feats(doc):
@@ -50,9 +52,30 @@ def extract_feats(doc):
     A document's percepts are the same regardless of the label considered.
     """
     ff = Counter()
+    
+    ff[doc[0]]=1
+    prev=doc[0]
+    ff[doc[1]]=1
+    prev2=doc[1]
+    #bias feature
+    ff['bias']=1
+    for word in doc[1:]:
+        #filter punctuation for unigrams
+        if word not in ['.',',','?','!','\'','"']:
+            #binary unigram
+            if ff[word]==0:
+                ff[word]=1
+        
+        #case normalization
+        word=word.lower()
+        
 
-    ...
-
+        
+        #trigram counts
+        ff[prev2+' '+prev+' '+word]+=1
+        prev2=prev
+        prev=word
+    
     return ff
 
 def load_featurized_docs(datasplit):
@@ -85,7 +108,33 @@ class Perceptron:
         At the end of training, self.weights should contain the final model
         parameters.
         """
-        ...
+        for iteration in range(self.MAX_ITERATIONS):
+            updates=0
+            correct=0
+            total=0.
+            for i in range(len(train_docs)):
+                gold=train_labels[i]
+                doc=train_docs[i]
+                maxResult=-1.
+                pred=''
+                for c in self.CLASSES:
+                    result=sum(self.weights[c][k]*doc[k] for k in doc)
+                    if result>maxResult:
+                        maxResult=result
+                        pred=c
+                if pred!=gold:
+                    self.weights[gold]+=doc
+                    self.weights[pred]-=doc
+                    updates+=1
+                    correct-=1
+                correct+=1
+                total+=1
+            print('Iteration '+str(iteration)+': updates='+str(updates)+', train accuracy='+str(correct/total)+', dev accuracy='+str(self.test_eval(self.dev_docs, self.dev_labels)))
+            if total==correct:
+                print('Converged after '+str(i+1)+' iterations')
+                break
+            
+                    
 
     def score(self, doc, label):
         """
@@ -98,7 +147,14 @@ class Perceptron:
         """
         Return the highest-scoring label for the document under the current model.
         """
-        return ...
+        maxResult=-1.
+        pred=''
+        for c in self.CLASSES:
+            result=sum(self.weights[c][k]*doc[k] for k in doc)
+            if result>maxResult:
+                maxResult=result
+                pred=c
+        return pred
 
     def test_eval(self, test_docs, test_labels):
         pred_labels = [self.predict(d) for d in test_docs]
@@ -126,3 +182,4 @@ if __name__ == "__main__":
     ptron = Perceptron(train_docs, train_labels, MAX_ITERATIONS=niters, dev_docs=dev_docs, dev_labels=dev_labels)
     acc = ptron.test_eval(test_docs, test_labels)
     print(acc, file=sys.stderr)
+    winsound.Beep(440, 500)
