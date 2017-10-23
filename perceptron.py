@@ -72,9 +72,9 @@ def extract_feats(doc):
             ff[word]=1
         
         #word trigram counts
-        ff[prev2+' '+prev+' '+word]+=1
-        prev2=prev
-        prev=word
+#        ff[prev2+' '+prev+' '+word]+=1
+#        prev2=prev
+#        prev=word
     
     return ff
 
@@ -108,6 +108,8 @@ class Perceptron:
         At the end of training, self.weights should contain the final model
         parameters.
         """
+        default=max(set(train_labels), key=train_labels.count)
+#        print(train_labels.count(default)/len(train_labels))
         for iteration in range(self.MAX_ITERATIONS):
             updates=0
             correct=0
@@ -115,8 +117,8 @@ class Perceptron:
             for i in range(len(train_docs)):
                 gold=train_labels[i]
                 doc=train_docs[i]
-                maxResult=-1.
-                pred=''
+                maxResult=0
+                pred=default
                 for c in self.CLASSES:
                     result=sum(self.weights[c][k]*doc[k] for k in doc)
                     if result>maxResult:
