@@ -128,7 +128,7 @@ class Perceptron:
                         pred=c
                 if pred!=gold:
                     self.weights[gold]+=doc
-                    self.weights[pred]-=doc
+                    self.weights[pred].subtract(doc)
                     updates+=1
                     correct-=1
                 correct+=1
