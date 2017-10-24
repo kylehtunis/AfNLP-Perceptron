@@ -19,8 +19,6 @@ from nltk.stem.wordnet import WordNetLemmatizer
 
 from evaluation import Eval
 
-#only for testing
-import winsound
 
 def load_docs(direc, lemmatize, labelMapFile='labels.csv'):
     """Return a list of word-token-lists, one per document.
@@ -204,6 +202,3 @@ if __name__ == "__main__":
         print('Bottom 10 Features: '+str(ptron.weights[l].most_common()[-10:]))
         print('Bias weight: '+str(ptron.weights[l]['bias']))
         print('')
-    
-    #for testing
-    winsound.Beep(440, 500)
