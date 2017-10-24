@@ -13,6 +13,8 @@ from math import log
 from numpy import mean
 import numpy as np
 
+from nltk.corpus import wordnet as wn
+
 from nltk.stem.wordnet import WordNetLemmatizer
 
 from evaluation import Eval
@@ -43,6 +45,9 @@ def load_docs(direc, lemmatize, labelMapFile='labels.csv'):
         docs.append(file.read().split())
         file.close()
         labels.append(labelMap[filename])
+#    print(direc)
+#    for label in set(labels):
+#        print(label + ' ' + str(labels.count(label)))
     return docs, labels
 
 def extract_feats(doc):
@@ -61,20 +66,19 @@ def extract_feats(doc):
     ff['bias']=1
     for word in doc[2:]:
         
-        #case normalization
+        #lowercasing
         word=word.lower()
         
-        #lemmatization
-        word=WordNetLemmatizer().lemmatize(word)
-        
         #binary unigram
-        if ff[word]==0:
-            ff[word]=1
+        ff[word]=1
         
-        #word trigram counts
-#        ff[prev2+' '+prev+' '+word]+=1
-#        prev2=prev
-#        prev=word
+        #word bigram counts
+        ff[prev+' '+word]+=1
+        
+        #binary trigrams
+        ff[prev2+' '+prev+' '+word]=1
+        prev2=prev
+        prev=word
     
     return ff
 
@@ -131,7 +135,7 @@ class Perceptron:
                     correct-=1
                 correct+=1
                 total+=1
-            print('Iteration '+str(iteration+1)+': updates='+str(updates)+', train accuracy='+str(correct/total)+', dev accuracy='+str(self.test_eval(self.dev_docs, self.dev_labels)))
+            print('Iteration '+str(iteration+1)+': updates='+str(updates)+', train accuracy='+str(correct/total)+', dev accuracy='+str(self.test_eval(self.dev_docs, self.dev_labels).accuracy()))
             if total==correct:
                 print('Converged after '+str(iteration+1)+' iterations')
                 break
@@ -161,7 +165,7 @@ class Perceptron:
     def test_eval(self, test_docs, test_labels):
         pred_labels = [self.predict(d) for d in test_docs]
         ev = Eval(test_labels, pred_labels)
-        return ev.accuracy()
+        return ev
 
 
 if __name__ == "__main__":
@@ -182,8 +186,24 @@ if __name__ == "__main__":
         sum(len(d) for d in test_docs)/len(test_docs), 'percepts on avg', file=sys.stderr)
 
     ptron = Perceptron(train_docs, train_labels, MAX_ITERATIONS=niters, dev_docs=dev_docs, dev_labels=dev_labels)
-    acc = ptron.test_eval(test_docs, test_labels)
-    print(acc, file=sys.stderr)
+    e = ptron.test_eval(test_docs, test_labels)
+    print(e.accuracy(), file=sys.stderr)
+
+    e.confusionMatrices()
+    e.measures()
+    for l in set(test_labels):
+        print(l)
+        print('True positives: '+str(e.matrices[l][0]))
+        print('False positives: '+str(e.matrices[l][1]))
+        print('False Negatives: '+str(e.matrices[l][2]))
+        print('True Negatives: '+str(e.matrices[l][3]))
+        print('Precision: '+str(e.precision[l]))
+        print('Recall: '+str(e.recall[l]))
+        print('F1: '+str(e.f1[l]))
+        print('Top 10 Features: '+str(ptron.weights[l].most_common(10)))
+        print('Bottom 10 Features: '+str(ptron.weights[l].most_common()[-10:]))
+        print('Bias weight: '+str(ptron.weights[l]['bias']))
+        print('')
     
     #for testing
     winsound.Beep(440, 500)
